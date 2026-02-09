@@ -6,11 +6,11 @@
     <title>kaplay-arcade</title>
   </head>
   <body>
-    <p><a href="hub/">Go to Hub</a></p>
+    <p><a href="apps/">Go to Hub</a></p>
     <script>
       const path = window.location.pathname.replace(/\/?$/, "/");
-      if (!path.endsWith("/hub/")) {
-        window.location.replace(`${path}hub/`);
+      if (!path.endsWith("/apps/")) {
+        window.location.replace(`${path}apps/`);
       }
     </script>
   </body>

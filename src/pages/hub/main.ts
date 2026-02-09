@@ -10,9 +10,9 @@ const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 const withBase = (path: string) => `${normalizedBaseUrl}${path.replace(/^\//, "")}`;
 
 const games: GameDef[] = [
-  { id: "game-a", title: "Game A: Tap Dodge", desc: "タップで左右移動して落下物を避ける。30秒生存で勝ち。", href: withBase("games/game-a/") },
-  { id: "game-b", title: "Game B: Timing", desc: "バーが中央に来た瞬間にタップ。連続成功で加点。", href: withBase("games/game-b/") },
-  { id: "game-c", title: "Game C: Clicker", desc: "10秒間でどれだけ稼げるか。連打でOK。", href: withBase("games/game-c/") },
+  { id: "game-a", title: "Game A: Tap Dodge", desc: "タップで左右移動して落下物を避ける。30秒生存で勝ち。", href: withBase("apps/games/game-a/") },
+  { id: "game-b", title: "Game B: Timing", desc: "バーが中央に来た瞬間にタップ。連続成功で加点。", href: withBase("apps/games/game-b/") },
+  { id: "game-c", title: "Game C: Clicker", desc: "10秒間でどれだけ稼げるか。連打でOK。", href: withBase("apps/games/game-c/") },
 ];
 
 const grid = document.getElementById("grid")!;
