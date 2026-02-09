@@ -87,6 +87,9 @@ export function startGameA(mount?: HTMLElement) {
     onTapOrClickPos(k, (p) => {
       player.dir = p.x < width() / 2 ? -1 : 1;
     }).forEach(track);
+    track(k.onTouchEnd(() => {
+      player.dir = 0;
+    }));
 
     // loop
     track(k.loop(0.45, () => {
