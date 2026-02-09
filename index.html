@@ -3,10 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta http-equiv="refresh" content="0; url=hub/" />
     <title>kaplay-arcade</title>
   </head>
   <body>
     <p><a href="hub/">Go to Hub</a></p>
+    <script>
+      const path = window.location.pathname.replace(/\/?$/, "/");
+      if (!path.endsWith("/hub/")) {
+        window.location.replace(`${path}hub/`);
+      }
+    </script>
   </body>
 </html>
