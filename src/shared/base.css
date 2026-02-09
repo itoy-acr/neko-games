@@ -1,0 +1,13 @@
+html, body {
+  margin: 0;
+  height: 100%;
+}
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
+}
+
+/* For embedded games (iframe), avoid browser gesture stealing */
+canvas {
+  touch-action: none;
+  display: block;
+}
