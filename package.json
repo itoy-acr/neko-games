@@ -9,8 +9,10 @@
     "preview": "vite preview",
     "fmt": "biome format --write .",
     "lint": "biome lint .",
-    "check": "biome check .",
-    "check:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "check": "biome check . && tsc --noEmit",
+    "fix": "biome check --write . && tsc --noEmit",
+    "check:fix": "npm run fix",
     "prepare": "husky"
   },
   "dependencies": {
