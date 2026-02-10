@@ -1,6 +1,6 @@
-import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 import { showRetryOverlay } from "../../../shared/game-ui";
 import { onTapOrClickPos } from "../../../shared/input";
+import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 
 export function startGameA(mount?: HTMLElement) {
   setupMobileViewport();
@@ -14,7 +14,26 @@ export function startGameA(mount?: HTMLElement) {
     root: mount ? (mount.querySelector("#kaplay-root") as HTMLElement) : undefined,
   });
 
-  const { add, rect, pos, area, body, anchor, color, text, vec2, width, height, dt, rand, onKeyPress, onUpdate, destroyAll, camPos, setGravity } = k;
+  const {
+    add,
+    rect,
+    pos,
+    area,
+    body,
+    anchor,
+    color,
+    text,
+    vec2,
+    width,
+    height,
+    dt,
+    rand,
+    onKeyPress,
+    onUpdate,
+    destroyAll,
+    camPos,
+    setGravity,
+  } = k;
 
   let cleanup: Array<{ cancel: () => void }> = [];
 
@@ -24,7 +43,9 @@ export function startGameA(mount?: HTMLElement) {
   };
 
   function resetHandlers() {
-    cleanup.forEach((c) => c.cancel());
+    cleanup.forEach((c) => {
+      c.cancel();
+    });
     cleanup = [];
   }
 
@@ -79,9 +100,21 @@ export function startGameA(mount?: HTMLElement) {
     }
 
     // input
-    track(onKeyPress("left", () => (player.dir = -1)));
-    track(onKeyPress("right", () => (player.dir = 1)));
-    track(onKeyPress("space", () => (player.dir = 0)));
+    track(
+      onKeyPress("left", () => {
+        player.dir = -1;
+      }),
+    );
+    track(
+      onKeyPress("right", () => {
+        player.dir = 1;
+      }),
+    );
+    track(
+      onKeyPress("space", () => {
+        player.dir = 0;
+      }),
+    );
 
     onTapOrClickPos(k, (p) => {
       const dx = p.x - player.pos.x;
@@ -91,51 +124,59 @@ export function startGameA(mount?: HTMLElement) {
         player.dir = dx < 0 ? -1 : 1;
       }
     }).forEach(track);
-    track(k.onMouseRelease(() => {
-      player.dir = 0;
-    }));
-    track(k.onTouchEnd(() => {
-      player.dir = 0;
-    }));
+    track(
+      k.onMouseRelease(() => {
+        player.dir = 0;
+      }),
+    );
+    track(
+      k.onTouchEnd(() => {
+        player.dir = 0;
+      }),
+    );
 
     const spawnInterval = 0.45;
     let nextSpawnIn = rand(0.5, 1.0);
 
-    track(onUpdate(() => {
-      if (!alive) return;
+    track(
+      onUpdate(() => {
+        if (!alive) return;
 
-      // move
-      const speed = 360;
-      player.pos.x += player.dir * speed * dt();
-      player.pos.x = Math.max(30, Math.min(width() - 30, player.pos.x));
+        // move
+        const speed = 360;
+        player.pos.x += player.dir * speed * dt();
+        player.pos.x = Math.max(30, Math.min(width() - 30, player.pos.x));
 
-      // spawn with a short grace period after boot / retry
-      nextSpawnIn -= dt();
-      if (nextSpawnIn <= 0) {
-        spawnRock();
-        nextSpawnIn = spawnInterval;
-      }
+        // spawn with a short grace period after boot / retry
+        nextSpawnIn -= dt();
+        if (nextSpawnIn <= 0) {
+          spawnRock();
+          nextSpawnIn = spawnInterval;
+        }
 
-      // rocks cleanup
-      k.get("rock").forEach((r) => {
-        if (r.pos.y > groundY) r.destroy();
-      });
+        // rocks cleanup
+        k.get("rock").forEach((r) => {
+          if (r.pos.y > groundY) r.destroy();
+        });
 
-      // countdown
-      t += dt();
-      const remain = Math.max(0, 30 - t);
-      timer.text = remain.toFixed(1);
-      if (remain <= 0) {
+        // countdown
+        t += dt();
+        const remain = Math.max(0, 30 - t);
+        timer.text = remain.toFixed(1);
+        if (remain <= 0) {
+          alive = false;
+          end("CLEAR! 30秒生存");
+        }
+      }),
+    );
+
+    track(
+      k.onCollide("player", "rock", () => {
+        if (!alive) return;
         alive = false;
-        end("CLEAR! 30秒生存");
-      }
-    }));
-
-    track(k.onCollide("player", "rock", () => {
-      if (!alive) return;
-      alive = false;
-      end("GAME OVER");
-    }));
+        end("GAME OVER");
+      }),
+    );
 
     function end(msg: string) {
       const controllers = showRetryOverlay(k, { title: msg }, boot);

@@ -1,6 +1,6 @@
-import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 import { showRetryOverlay } from "../../../shared/game-ui";
 import { onTapOrClick } from "../../../shared/input";
+import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 
 export function startGameD(mount?: HTMLElement) {
   setupMobileViewport();
@@ -13,7 +13,22 @@ export function startGameD(mount?: HTMLElement) {
     root: mount ? (mount.querySelector("#kaplay-root") as HTMLElement) : undefined,
   });
 
-  const { add, rect, pos, area, body, anchor, color, text, width, height, dt, rand, destroyAll, setGravity } = k;
+  const {
+    add,
+    rect,
+    pos,
+    area,
+    body,
+    anchor,
+    color,
+    text,
+    width,
+    height,
+    dt,
+    rand,
+    destroyAll,
+    setGravity,
+  } = k;
 
   let cleanup: Array<{ cancel: () => void }> = [];
 
@@ -23,7 +38,9 @@ export function startGameD(mount?: HTMLElement) {
   };
 
   function resetHandlers() {
-    cleanup.forEach((c) => c.cancel());
+    cleanup.forEach((c) => {
+      c.cancel();
+    });
     cleanup = [];
   }
 
@@ -92,51 +109,57 @@ export function startGameD(mount?: HTMLElement) {
     let spawnEvery = spawnBase;
     let obstacleSpeed = 320;
 
-    track(k.loop(0.12, () => {
-      if (!alive) return;
-      spawnEvery -= 0.12;
-      if (spawnEvery > 0) return;
+    track(
+      k.loop(0.12, () => {
+        if (!alive) return;
+        spawnEvery -= 0.12;
+        if (spawnEvery > 0) return;
 
-      const h = rand(42, 96);
-      const w = rand(24, 38);
+        const h = rand(42, 96);
+        const w = rand(24, 38);
 
-      add([
-        rect(w, h),
-        pos(width() + w, groundY + playerSize / 2),
-        anchor("botleft"),
-        area(),
-        color(255, 170, 120),
-        "obstacle",
-        "game",
-      ]);
+        add([
+          rect(w, h),
+          pos(width() + w, groundY + playerSize / 2),
+          anchor("botleft"),
+          area(),
+          color(255, 170, 120),
+          "obstacle",
+          "game",
+        ]);
 
-      spawnEvery = rand(0.75, 1.25);
-      obstacleSpeed = Math.min(620, obstacleSpeed + 4);
-    }));
+        spawnEvery = rand(0.75, 1.25);
+        obstacleSpeed = Math.min(620, obstacleSpeed + 4);
+      }),
+    );
 
-    track(k.onUpdate(() => {
-      if (!alive) return;
+    track(
+      k.onUpdate(() => {
+        if (!alive) return;
 
-      const grounded = player.isGrounded();
-      if (grounded && !wasGrounded) {
-        player.jumpsLeft = 2;
-      }
-      wasGrounded = grounded;
+        const grounded = player.isGrounded();
+        if (grounded && !wasGrounded) {
+          player.jumpsLeft = 2;
+        }
+        wasGrounded = grounded;
 
-      score += Math.round(50 * dt());
-      scoreLabel.text = String(score);
+        score += Math.round(50 * dt());
+        scoreLabel.text = String(score);
 
-      k.get("obstacle").forEach((o) => {
-        o.move(-obstacleSpeed, 0);
-        if (o.pos.x < -80) o.destroy();
-      });
-    }));
+        k.get("obstacle").forEach((o) => {
+          o.move(-obstacleSpeed, 0);
+          if (o.pos.x < -80) o.destroy();
+        });
+      }),
+    );
 
-    track(k.onCollide("player", "obstacle", () => {
-      if (!alive) return;
-      alive = false;
-      end();
-    }));
+    track(
+      k.onCollide("player", "obstacle", () => {
+        if (!alive) return;
+        alive = false;
+        end();
+      }),
+    );
 
     function end() {
       const controllers = showRetryOverlay(

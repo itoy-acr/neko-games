@@ -1,6 +1,6 @@
-import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 import { showRetryOverlay } from "../../../shared/game-ui";
 import { onTapOrClick } from "../../../shared/input";
+import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 
 export function startGameC(mount?: HTMLElement) {
   setupMobileViewport();
@@ -24,7 +24,9 @@ export function startGameC(mount?: HTMLElement) {
   };
 
   function resetHandlers() {
-    cleanup.forEach((c) => c.cancel());
+    cleanup.forEach((c) => {
+      c.cancel();
+    });
     cleanup = [];
   }
 
@@ -37,8 +39,20 @@ export function startGameC(mount?: HTMLElement) {
     let running = true;
 
     add([text("10秒クリックチャレンジ", { size: 22 }), pos(20, 20), color(255, 255, 255), "game"]);
-    const sc = add([text("0", { size: 26 }), pos(width() / 2, 110), anchor("center"), color(120, 220, 255), "game"]);
-    const timer = add([text("10.0", { size: 20 }), pos(width() / 2, 150), anchor("center"), color(230, 230, 230), "game"]);
+    const sc = add([
+      text("0", { size: 26 }),
+      pos(width() / 2, 110),
+      anchor("center"),
+      color(120, 220, 255),
+      "game",
+    ]);
+    const timer = add([
+      text("10.0", { size: 20 }),
+      pos(width() / 2, 150),
+      anchor("center"),
+      color(230, 230, 230),
+      "game",
+    ]);
 
     add([
       rect(220, 120),
@@ -50,7 +64,13 @@ export function startGameC(mount?: HTMLElement) {
       "game",
     ]);
 
-    add([text("TAP!", { size: 38 }), pos(width() / 2, height() / 2), anchor("center"), color(20, 20, 20), "game"]);
+    add([
+      text("TAP!", { size: 38 }),
+      pos(width() / 2, height() / 2),
+      anchor("center"),
+      color(20, 20, 20),
+      "game",
+    ]);
 
     function hit() {
       if (!running) return;
@@ -63,16 +83,18 @@ export function startGameC(mount?: HTMLElement) {
     }).forEach(track);
     track(onKeyPress("space", () => hit()));
 
-    track(k.onUpdate(() => {
-      if (!running) return;
-      t += dt();
-      const remain = Math.max(0, 10 - t);
-      timer.text = remain.toFixed(1);
-      if (remain <= 0) {
-        running = false;
-        end();
-      }
-    }));
+    track(
+      k.onUpdate(() => {
+        if (!running) return;
+        t += dt();
+        const remain = Math.max(0, 10 - t);
+        timer.text = remain.toFixed(1);
+        if (remain <= 0) {
+          running = false;
+          end();
+        }
+      }),
+    );
 
     function end() {
       const controllers = showRetryOverlay(

@@ -1,5 +1,5 @@
-import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 import { onTapOrClick } from "../../../shared/input";
+import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 
 export function startGameB(mount?: HTMLElement) {
   setupMobileViewport();
@@ -12,7 +12,7 @@ export function startGameB(mount?: HTMLElement) {
     root: mount ? (mount.querySelector("#kaplay-root") as HTMLElement) : undefined,
   });
 
-  const { add, rect, pos, anchor, color, text, width, height, dt, onKeyPress, destroyAll, rand } = k;
+  const { add, rect, pos, color, text, width, height, dt, onKeyPress, destroyAll, rand } = k;
 
   let cleanup: Array<{ cancel: () => void }> = [];
 
@@ -22,7 +22,9 @@ export function startGameB(mount?: HTMLElement) {
   };
 
   function resetHandlers() {
-    cleanup.forEach((c) => c.cancel());
+    cleanup.forEach((c) => {
+      c.cancel();
+    });
     cleanup = [];
   }
 
@@ -68,14 +70,27 @@ export function startGameB(mount?: HTMLElement) {
     track(onKeyPress("space", () => tap()));
     track(onKeyPress("enter", () => tap()));
 
-    track(k.onUpdate(() => {
-      x += dir * 320 * speed * dt();
-      if (x < 40) { x = 40; dir = 1; }
-      if (x > width() - 80 - 18) { x = width() - 80 - 18; dir = -1; }
-      cursor.pos.x = x;
-    }));
+    track(
+      k.onUpdate(() => {
+        x += dir * 320 * speed * dt();
+        if (x < 40) {
+          x = 40;
+          dir = 1;
+        }
+        if (x > width() - 80 - 18) {
+          x = width() - 80 - 18;
+          dir = -1;
+        }
+        cursor.pos.x = x;
+      }),
+    );
 
-    add([text("Tapで判定 / SpaceでもOK\n外すと減点", { size: 16 }), pos(20, height() - 70), color(230, 230, 230), "game"]);
+    add([
+      text("Tapで判定 / SpaceでもOK\n外すと減点", { size: 16 }),
+      pos(20, height() - 70),
+      color(230, 230, 230),
+      "game",
+    ]);
   }
 
   boot();

@@ -29,13 +29,7 @@ export function showRetryOverlay(
 
   const { add, rect, pos, color, text, anchor, width, height, area } = k;
 
-  add([
-    rect(width(), height()),
-    pos(0, 0),
-    color(0, 0, 0),
-    k.opacity(0.55),
-    tag,
-  ]);
+  add([rect(width(), height()), pos(0, 0), color(0, 0, 0), k.opacity(0.55), tag]);
 
   const dialogW = Math.round(width() * dialogScale);
   const dialogH = Math.round(height() * dialogScale);
@@ -94,9 +88,11 @@ export function showRetryOverlay(
   const controllers: KEventController[] = [];
 
   if (!retryReady) {
-    controllers.push(k.wait(waitSeconds, () => {
-      retryReady = true;
-    }));
+    controllers.push(
+      k.wait(waitSeconds, () => {
+        retryReady = true;
+      }),
+    );
   }
 
   const retry = () => {

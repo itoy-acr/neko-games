@@ -4,10 +4,7 @@
   "name": "Node.js",
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bullseye",
-  "runArgs": [
-    "--name", "neko-games",
-    "--add-host=host.docker.internal:host-gateway"
-  ],
+  "runArgs": ["--name", "neko-games", "--add-host=host.docker.internal:host-gateway"],
 
   // Codex 永続化（プロジェクト専用）
   "mounts": [
@@ -26,9 +23,7 @@
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
-      "extensions": [
-        "openai.chatgpt"
-      ],
+      "extensions": ["openai.chatgpt"],
       "settings": {
         "editor.codeActionsOnSave": {
           "source.fixAll": "never",
