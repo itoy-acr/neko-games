@@ -31,6 +31,7 @@ export default defineConfig({
         "games/game-b": resolve(__dirname, "apps/games/game-b/index.html"),
         "games/game-c": resolve(__dirname, "apps/games/game-c/index.html"),
         "games/game-d": resolve(__dirname, "apps/games/game-d/index.html"),
+        "games/game-e": resolve(__dirname, "apps/games/game-e/index.html"),
       },
     },
   },

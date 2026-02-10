@@ -30,6 +30,12 @@ const games: GameDef[] = [
     desc: "ジャンプで障害物を避け続けるランゲーム。",
     href: "games/game-d/",
   },
+  {
+    id: "game-e",
+    title: "Game E: Neko Suika",
+    desc: "ネコを落として同じ種類を合体させるスイカゲーム。",
+    href: "games/game-e/",
+  },
 ];
 
 const grid = document.getElementById("grid");
