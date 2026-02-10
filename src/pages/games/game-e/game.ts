@@ -24,15 +24,15 @@ type CatType = {
 };
 
 const CAT_TYPES: CatType[] = [
-  { face: "🐱", radius: 24, color: [251, 231, 196], points: 10 },
-  { face: "😸", radius: 34, color: [252, 207, 153], points: 20 },
-  { face: "😺", radius: 46, color: [255, 184, 148], points: 40 },
-  { face: "😻", radius: 60, color: [246, 160, 139], points: 80 },
-  { face: "😽", radius: 74, color: [238, 149, 161], points: 160 },
-  { face: "🙀", radius: 88, color: [212, 158, 210], points: 320 },
-  { face: "😿", radius: 102, color: [170, 172, 229], points: 640 },
-  { face: "😾", radius: 116, color: [138, 190, 235], points: 1280 },
-  { face: "🐯", radius: 130, color: [112, 210, 208], points: 2560 },
+  { face: "🐱", radius: 24, color: [255, 209, 102], points: 10 },
+  { face: "😸", radius: 34, color: [6, 214, 160], points: 20 },
+  { face: "😺", radius: 46, color: [76, 201, 240], points: 40 },
+  { face: "😻", radius: 60, color: [181, 23, 158], points: 80 },
+  { face: "😽", radius: 74, color: [247, 37, 133], points: 160 },
+  { face: "🙀", radius: 88, color: [255, 159, 28], points: 320 },
+  { face: "😿", radius: 102, color: [46, 196, 182], points: 640 },
+  { face: "😾", radius: 116, color: [94, 96, 206], points: 1280 },
+  { face: "🐯", radius: 130, color: [231, 29, 54], points: 2560 },
 ];
 
 const GRAVITY = 0.34;
@@ -254,7 +254,7 @@ export function startGameE(mount?: HTMLElement) {
       ]) as CatVisualObj;
 
       const face = add([
-        text(catType.face, { size: Math.max(20, radius * 0.95) }),
+        text(catType.face, { size: Math.max(24, radius * 1.06) }),
         pos(ball.pos.x, ball.pos.y),
         anchor("center"),
         "game",
