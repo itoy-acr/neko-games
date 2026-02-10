@@ -7,7 +7,7 @@
 
 # kaplay-arcade (multi-page)
 
-- /hub/ : game list
+- / : game list
 - /featured/ : embed-friendly "featured game" (change in src/pages/featured/main.ts)
 - /games/game-a/ ~ /games/game-d/ : standalone pages
 

@@ -14,9 +14,13 @@ const games: GameDef[] = [
 
 const grid = document.getElementById("grid")!;
 
-grid.innerHTML = games.map(g => `
-  <a class="card" href="${g.href}">
-    <div class="title">${g.title}</div>
-    <div class="desc">${g.desc}</div>
+grid.innerHTML = games
+  .map(
+    g => `
+  <a class="block rounded-xl border border-sky-300 bg-sky-200 p-3.5 text-slate-900 no-underline shadow-[0_8px_30px_rgba(2,6,23,0.25)] transition duration-150 ease-out hover:-translate-y-0.5 hover:border-sky-400 hover:bg-sky-300" href="${g.href}">
+    <div class="mb-1.5 font-bold">${g.title}</div>
+    <div class="text-sm leading-[1.35] text-slate-700">${g.desc}</div>
   </a>
-`).join("");
+`
+  )
+  .join("");

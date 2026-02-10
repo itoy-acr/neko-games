@@ -12,7 +12,9 @@
     "kaplay": "^3001.0.19"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.1.18",
     "@types/node": "^25.2.0",
+    "tailwindcss": "^4.1.18",
     "vite": "^7.3.1"
   }
 }

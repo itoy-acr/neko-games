@@ -5,26 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Hub | kaplay-arcade</title>
     <link rel="stylesheet" href="../src/shared/base.css" />
-    <style>
-      main { max-width: 900px; margin: 0 auto; padding: 24px; }
-      h1 { font-size: 22px; margin: 0 0 16px; }
-      .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-      a.card { display: block; padding: 14px; border: 1px solid #2a2f3a; border-radius: 12px; color: inherit; text-decoration: none; background: #79a0dd; transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease; }
-      a.card:hover { border-color: #5a6d8c; background: #2d4161; transform: translateY(-1px); }
-      .title { font-weight: 700; margin-bottom: 6px; }
-      .desc { opacity: .85; font-size: 14px; line-height: 1.35; }
-      .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-      .pill { font-size: 12px; border: 1px solid #2a2f3a; padding: 3px 8px; border-radius: 999px; opacity: .85; }
-    </style>
+    <link rel="stylesheet" href="../src/pages/style.tailwind.css" />
   </head>
-  <body>
-    <main>
-      <h1>ミニゲーム一覧</h1>
-      <div class="grid" id="grid"></div>
-      <div class="row">
-        <a class="pill" href="featured/">/featured/ を開く（LP埋め込み想定）</a>
+  <body class="bg-slate-900 text-slate-100">
+    <main class="mx-auto w-full max-w-[900px] p-6">
+      <h1 class="mb-4 text-[22px] font-bold tracking-tight">ミニゲーム一覧</h1>
+      <div class="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]" id="grid"></div>
+      <div class="mt-3 flex flex-wrap gap-2.5">
+        <a class="rounded-full border border-sky-300/50 bg-slate-800 px-2 py-1 text-xs text-sky-100 transition hover:border-sky-300 hover:bg-slate-700 hover:text-white" href="featured/">/featured/ を開く（LP埋め込み想定）</a>
       </div>
     </main>
-    <script type="module" src="../src/pages/hub/main.ts"></script>
+    <script type="module" src="../src/pages/main.ts"></script>
   </body>
 </html>

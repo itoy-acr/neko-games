@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import { resolve } from "node:path";
+import tailwindcss from "@tailwindcss/vite";
 
 const kaplayCongrats = () => {
   return {
@@ -24,7 +25,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        hub: resolve(__dirname, "apps/index.html"),
+        index: resolve(__dirname, "apps/index.html"),
         featured: resolve(__dirname, "apps/featured/index.html"),
         "games/game-a": resolve(__dirname, "apps/games/game-a/index.html"),
         "games/game-b": resolve(__dirname, "apps/games/game-b/index.html"),
@@ -34,6 +35,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    tailwindcss(),
     // Disable messages removing this line
     kaplayCongrats(),
   ],
