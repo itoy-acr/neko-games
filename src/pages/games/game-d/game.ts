@@ -33,22 +33,22 @@ export function startGameD(mount?: HTMLElement) {
     setGravity(1800);
 
     const groundY = height() - 90;
-    const playerStartX = 120;
+    const playerStartX = 88;
     const playerSize = 40;
 
     let score = 0;
     let alive = true;
 
     add([
-      text("Jump Runner: Tap / Spaceでジャンプ\n障害物を避けてスコアを伸ばそう", { size: 18 }),
-      pos(20, 18),
+      text("Tap / Space / ↑ でジャンプ\n障害物を避けてスコアを伸ばそう", { size: 16 }),
+      pos(16, 16),
       color(230, 230, 230),
       "game",
     ]);
 
     const scoreLabel = add([
       text("0", { size: 24 }),
-      pos(width() - 46, 20),
+      pos(width() - 16, 56),
       anchor("topright"),
       color(255, 255, 255),
       "game",
@@ -66,25 +66,22 @@ export function startGameD(mount?: HTMLElement) {
     ]);
 
     const player = add([
-      rect(playerSize, playerSize),
+      text("🐱", { size: 40 }),
       pos(playerStartX, groundY),
       anchor("center"),
       area(),
       body(),
-      color(120, 220, 255),
       "player",
       "game",
-      { canJump: false },
+      { jumpsLeft: 2 },
     ]);
 
-    track(k.onCollideUpdate("player", "ground", (p) => {
-      p.canJump = true;
-    }));
+    let wasGrounded = false;
 
     function jump() {
-      if (!alive || !player.canJump) return;
+      if (!alive || player.jumpsLeft <= 0) return;
       player.jump(720);
-      player.canJump = false;
+      player.jumpsLeft -= 1;
     }
 
     onTapOrClick(k, () => jump()).forEach(track);
@@ -100,7 +97,7 @@ export function startGameD(mount?: HTMLElement) {
       spawnEvery -= 0.12;
       if (spawnEvery > 0) return;
 
-      const h = rand(34, 78);
+      const h = rand(42, 96);
       const w = rand(24, 38);
 
       add([
@@ -119,6 +116,12 @@ export function startGameD(mount?: HTMLElement) {
 
     track(k.onUpdate(() => {
       if (!alive) return;
+
+      const grounded = player.isGrounded();
+      if (grounded && !wasGrounded) {
+        player.jumpsLeft = 2;
+      }
+      wasGrounded = grounded;
 
       score += Math.round(50 * dt());
       scoreLabel.text = String(score);

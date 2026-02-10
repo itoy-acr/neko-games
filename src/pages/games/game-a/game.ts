@@ -42,12 +42,11 @@ export function startGameA(mount?: HTMLElement) {
     ]);
 
     const player = add([
-      rect(44, 44),
+      text("🐱", { size: 40 }),
       pos(width() / 2, height() - 90),
       area(),
       body({ isStatic: true }),
       anchor("center"),
-      color(120, 220, 255),
       "player",
       "game",
       { dir: 0 as -1 | 0 | 1 },
@@ -85,17 +84,22 @@ export function startGameA(mount?: HTMLElement) {
     track(onKeyPress("space", () => (player.dir = 0)));
 
     onTapOrClickPos(k, (p) => {
-      player.dir = p.x < width() / 2 ? -1 : 1;
+      const dx = p.x - player.pos.x;
+      if (Math.abs(dx) <= 6) {
+        player.dir = 0;
+      } else {
+        player.dir = dx < 0 ? -1 : 1;
+      }
     }).forEach(track);
+    track(k.onMouseRelease(() => {
+      player.dir = 0;
+    }));
     track(k.onTouchEnd(() => {
       player.dir = 0;
     }));
 
-    // loop
-    track(k.loop(0.45, () => {
-      if (!alive) return;
-      spawnRock();
-    }));
+    const spawnInterval = 0.45;
+    let nextSpawnIn = rand(0.5, 1.0);
 
     track(onUpdate(() => {
       if (!alive) return;
@@ -104,6 +108,13 @@ export function startGameA(mount?: HTMLElement) {
       const speed = 360;
       player.pos.x += player.dir * speed * dt();
       player.pos.x = Math.max(30, Math.min(width() - 30, player.pos.x));
+
+      // spawn with a short grace period after boot / retry
+      nextSpawnIn -= dt();
+      if (nextSpawnIn <= 0) {
+        spawnRock();
+        nextSpawnIn = spawnInterval;
+      }
 
       // rocks cleanup
       k.get("rock").forEach((r) => {
