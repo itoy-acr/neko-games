@@ -1,6 +1,5 @@
 import type { GameObj, PosComp } from "kaplay";
 import { showRetryOverlay } from "../../../shared/game-ui";
-import { onTapOrClickPos } from "../../../shared/input";
 import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 
 type CatVisualObj = GameObj<PosComp>;
@@ -17,20 +16,24 @@ type Cat = {
   face: CatVisualObj;
 };
 
-const CAT_FACES = ["🐱", "😸", "😺", "😻", "😽", "🙀", "😿", "😾", "🐯"];
-const CAT_RADII = [24, 34, 46, 60, 74, 88, 102, 116, 130];
-const CAT_COLORS: Array<[number, number, number]> = [
-  [251, 231, 196],
-  [252, 207, 153],
-  [255, 184, 148],
-  [246, 160, 139],
-  [238, 149, 161],
-  [212, 158, 210],
-  [170, 172, 229],
-  [138, 190, 235],
-  [112, 210, 208],
+type CatType = {
+  face: string;
+  radius: number;
+  color: [number, number, number];
+  points: number;
+};
+
+const CAT_TYPES: CatType[] = [
+  { face: "🐱", radius: 24, color: [251, 231, 196], points: 10 },
+  { face: "😸", radius: 34, color: [252, 207, 153], points: 20 },
+  { face: "😺", radius: 46, color: [255, 184, 148], points: 40 },
+  { face: "😻", radius: 60, color: [246, 160, 139], points: 80 },
+  { face: "😽", radius: 74, color: [238, 149, 161], points: 160 },
+  { face: "🙀", radius: 88, color: [212, 158, 210], points: 320 },
+  { face: "😿", radius: 102, color: [170, 172, 229], points: 640 },
+  { face: "😾", radius: 116, color: [138, 190, 235], points: 1280 },
+  { face: "🐯", radius: 130, color: [112, 210, 208], points: 2560 },
 ];
-const CAT_POINTS = [10, 20, 40, 80, 160, 320, 640, 1280, 2560];
 
 const GRAVITY = 0.34;
 const AIR_FRICTION = 0.995;
@@ -103,6 +106,8 @@ export function startGameE(mount?: HTMLElement) {
 
     let cursorX = width() / 2;
     let nextLevel = randSmallLevel();
+    let touchAiming = false;
+    let mouseAiming = false;
 
     const cats: Cat[] = [];
 
@@ -140,14 +145,14 @@ export function startGameE(mount?: HTMLElement) {
     const nextBall = add([
       circle(18),
       pos(width() - 42, 76),
-      color(...CAT_COLORS[nextLevel]),
+      color(...CAT_TYPES[nextLevel].color),
       opacity(0.9),
       z(200),
       "game",
     ]);
 
     const nextFace = add([
-      text(CAT_FACES[nextLevel], { size: 18 }),
+      text(CAT_TYPES[nextLevel].face, { size: 18 }),
       pos(width() - 42, 76),
       anchor("center"),
       z(201),
@@ -208,6 +213,7 @@ export function startGameE(mount?: HTMLElement) {
       opacity(0.55),
       "game",
     ]);
+    guide.hidden = true;
 
     function randSmallLevel() {
       const r = rand(0, 1);
@@ -227,9 +233,9 @@ export function startGameE(mount?: HTMLElement) {
 
     function updateNextPreview() {
       nextLabel.text = "NEXT";
-      nextBall.radius = Math.max(14, CAT_RADII[nextLevel] * 0.55);
-      nextBall.color = k.rgb(...CAT_COLORS[nextLevel]);
-      nextFace.text = CAT_FACES[nextLevel];
+      nextBall.radius = Math.max(14, CAT_TYPES[nextLevel].radius * 0.55);
+      nextBall.color = k.rgb(...CAT_TYPES[nextLevel].color);
+      nextFace.text = CAT_TYPES[nextLevel].face;
     }
 
     function refreshScore() {
@@ -237,17 +243,18 @@ export function startGameE(mount?: HTMLElement) {
     }
 
     function createCat(level: number, x: number, y: number, vx = 0, vy = 0) {
-      const radius = CAT_RADII[level];
+      const catType = CAT_TYPES[level];
+      const radius = catType.radius;
       const ball = add([
         circle(radius),
         pos(clampX(x, radius), y),
         anchor("center"),
-        color(...CAT_COLORS[level]),
+        color(...catType.color),
         "game",
       ]) as CatVisualObj;
 
       const face = add([
-        text(CAT_FACES[level], { size: Math.max(20, radius * 0.95) }),
+        text(catType.face, { size: Math.max(20, radius * 0.95) }),
         pos(ball.pos.x, ball.pos.y),
         anchor("center"),
         "game",
@@ -276,7 +283,7 @@ export function startGameE(mount?: HTMLElement) {
     }
 
     function mergeCats(a: Cat, b: Cat) {
-      const mergedLevel = Math.min(CAT_FACES.length - 1, a.level + 1);
+      const mergedLevel = Math.min(CAT_TYPES.length - 1, a.level + 1);
       const x = (a.x + b.x) * 0.5;
       const y = Math.min(a.y, b.y);
 
@@ -284,7 +291,7 @@ export function startGameE(mount?: HTMLElement) {
       destroyCat(b);
       createCat(mergedLevel, x, y, 0, 0);
 
-      score += CAT_POINTS[mergedLevel] ?? (mergedLevel + 1) * (mergedLevel + 1) * 5;
+      score += CAT_TYPES[mergedLevel]?.points ?? (mergedLevel + 1) * (mergedLevel + 1) * 5;
       peakLevel = Math.max(peakLevel, mergedLevel);
       refreshScore();
     }
@@ -303,7 +310,7 @@ export function startGameE(mount?: HTMLElement) {
 
     function tryDrop(x?: number) {
       if (!alive || dropCooldown > 0) return;
-      const radius = CAT_RADII[nextLevel];
+      const radius = CAT_TYPES[nextLevel].radius;
       if (typeof x === "number") cursorX = clampX(x, radius);
 
       createCat(nextLevel, cursorX, spawnY, 0, 0);
@@ -322,7 +329,7 @@ export function startGameE(mount?: HTMLElement) {
         cat.x += cat.vx * step;
         cat.y += cat.vy * step;
 
-        const r = CAT_RADII[cat.level];
+        const r = CAT_TYPES[cat.level].radius;
 
         if (cat.x - r < wall) {
           cat.x = wall + r;
@@ -340,7 +347,7 @@ export function startGameE(mount?: HTMLElement) {
       }
     }
 
-    function resolveCollisionsAndMerge() {
+    function resolveCollisionsAndMerge(allowMerge: boolean) {
       let mergeCandidate: [Cat, Cat] | null = null;
 
       for (let pass = 0; pass < SOLVER_PASSES; pass += 1) {
@@ -350,14 +357,20 @@ export function startGameE(mount?: HTMLElement) {
             const b = cats[j];
             const dx = a.x - b.x;
             const dy = a.y - b.y;
-            const dist = Math.hypot(dx, dy) || 0.0001;
-            const ra = CAT_RADII[a.level];
-            const rb = CAT_RADII[b.level];
+            const ra = CAT_TYPES[a.level].radius;
+            const rb = CAT_TYPES[b.level].radius;
             const minDist = ra + rb;
+            const rawDist = Math.hypot(dx, dy);
+            const dist = Math.max(0.0001, rawDist);
 
             if (dist >= minDist) continue;
 
-            if (!mergeCandidate && a.level === b.level && a.level < CAT_FACES.length - 1) {
+            if (
+              allowMerge &&
+              !mergeCandidate &&
+              a.level === b.level &&
+              a.level < CAT_TYPES.length - 1
+            ) {
               const relVx = a.vx - b.vx;
               const relVy = a.vy - b.vy;
               const relSpeed = Math.hypot(relVx, relVy);
@@ -366,8 +379,13 @@ export function startGameE(mount?: HTMLElement) {
               }
             }
 
-            const nx = dx / dist;
-            const ny = dy / dist;
+            let nx = dx / dist;
+            let ny = dy / dist;
+            if (rawDist < 0.0001) {
+              const theta = rand(0, Math.PI * 2);
+              nx = Math.cos(theta);
+              ny = Math.sin(theta);
+            }
             const overlap = minDist - dist;
             const ma = ra * ra;
             const mb = rb * rb;
@@ -399,7 +417,7 @@ export function startGameE(mount?: HTMLElement) {
 
       // Constrain at the very end to avoid unnatural "teleport" during pair resolution.
       for (const cat of cats) {
-        const r = CAT_RADII[cat.level];
+        const r = CAT_TYPES[cat.level].radius;
         if (cat.x - r < wall) {
           cat.x = wall + r;
           if (cat.vx < 0) cat.vx *= -0.35;
@@ -414,7 +432,7 @@ export function startGameE(mount?: HTMLElement) {
         }
       }
 
-      if (mergeCandidate) {
+      if (allowMerge && mergeCandidate) {
         mergeCats(mergeCandidate[0], mergeCandidate[1]);
       }
     }
@@ -426,33 +444,70 @@ export function startGameE(mount?: HTMLElement) {
       }
     }
 
-    onTapOrClickPos(k, (p) => tryDrop(p.x)).forEach(track);
+    track(
+      k.onTouchStart((p) => {
+        if (!alive) return;
+        touchAiming = true;
+        cursorX = clampX(p.x, CAT_TYPES[nextLevel].radius);
+        guide.hidden = false;
+      }),
+    );
 
     track(
       k.onMouseMove((p) => {
         if (!alive) return;
-        cursorX = clampX(p.x, CAT_RADII[nextLevel]);
+        cursorX = clampX(p.x, CAT_TYPES[nextLevel].radius);
       }),
     );
 
     track(
       k.onTouchMove((p) => {
         if (!alive) return;
-        cursorX = clampX(p.x, CAT_RADII[nextLevel]);
+        if (!touchAiming) return;
+        cursorX = clampX(p.x, CAT_TYPES[nextLevel].radius);
+      }),
+    );
+
+    track(
+      k.onTouchEnd(() => {
+        if (!alive) return;
+        if (!touchAiming) return;
+        touchAiming = false;
+        guide.hidden = !mouseAiming;
+        tryDrop();
+      }),
+    );
+
+    track(
+      k.onMousePress(() => {
+        if (!alive) return;
+        mouseAiming = true;
+        cursorX = clampX(k.mousePos().x, CAT_TYPES[nextLevel].radius);
+        guide.hidden = false;
+      }),
+    );
+
+    track(
+      k.onMouseRelease(() => {
+        if (!alive) return;
+        if (!mouseAiming) return;
+        mouseAiming = false;
+        guide.hidden = !touchAiming;
+        tryDrop();
       }),
     );
 
     track(
       k.onKeyDown("left", () => {
         if (!alive) return;
-        cursorX = clampX(cursorX - 320 * dt(), CAT_RADII[nextLevel]);
+        cursorX = clampX(cursorX - 320 * dt(), CAT_TYPES[nextLevel].radius);
       }),
     );
 
     track(
       k.onKeyDown("right", () => {
         if (!alive) return;
-        cursorX = clampX(cursorX + 320 * dt(), CAT_RADII[nextLevel]);
+        cursorX = clampX(cursorX + 320 * dt(), CAT_TYPES[nextLevel].radius);
       }),
     );
 
@@ -463,18 +518,26 @@ export function startGameE(mount?: HTMLElement) {
       k.onUpdate(() => {
         if (!alive) return;
 
-        const step = Math.min(2.2, dt() * 60);
+        const rawStep = dt() * 60;
+        const frameSteps = rawStep > 1.15 ? Math.min(3, Math.ceil(rawStep / 0.95)) : 1;
+        const step = Math.min(2.2, rawStep / frameSteps);
+        const aiming = touchAiming || mouseAiming;
         timeElapsed += dt();
         dropCooldown = Math.max(0, dropCooldown - dt());
-        guide.pos.x = clampX(cursorX, CAT_RADII[nextLevel]);
+        guide.hidden = !aiming;
+        if (aiming) {
+          guide.pos.x = clampX(cursorX, CAT_TYPES[nextLevel].radius);
+        }
 
-        updatePhysics(step);
-        resolveCollisionsAndMerge();
+        for (let i = 0; i < frameSteps; i += 1) {
+          updatePhysics(step);
+          resolveCollisionsAndMerge(i === frameSteps - 1);
+        }
         syncVisuals();
 
         let dangerFound = false;
         for (const cat of cats) {
-          const radius = CAT_RADII[cat.level];
+          const radius = CAT_TYPES[cat.level].radius;
           if (timeElapsed - cat.bornAt > 1.0 && cat.y - radius < dangerY) {
             dangerFound = true;
             break;
