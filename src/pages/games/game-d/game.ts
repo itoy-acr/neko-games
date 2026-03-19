@@ -93,9 +93,9 @@ export function startGameD(mount?: HTMLElement) {
     destroyAll("game");
     setGravity(1800);
 
-    const groundY = height() - 90;
+    const groundY = height() * 0.72;
     const playerStartX = 88;
-    const playerH = 64;
+    const playerH = 96;
     const playerW = playerH * PLAYER_RATIO;
 
     let score = 0;
@@ -150,7 +150,7 @@ export function startGameD(mount?: HTMLElement) {
       sprite("player", { width: playerW, height: playerH }),
       pos(playerStartX, groundY),
       anchor("center"),
-      area(),
+      area({ shape: new k.Rect(k.vec2(0), playerW * 0.6, playerH * 0.8) }),
       body(),
       "player",
       "game",
@@ -188,9 +188,9 @@ export function startGameD(mount?: HTMLElement) {
     track(k.onKeyPress("space", jump));
     track(k.onKeyPress("up", jump));
 
-    const spawnBase = 1.1;
+    const spawnBase = 2.0;
     let spawnEvery = spawnBase;
-    let obstacleSpeed = 180;
+    let obstacleSpeed = 320;
 
     track(
       k.loop(0.12, () => {
@@ -200,14 +200,14 @@ export function startGameD(mount?: HTMLElement) {
 
         const obs = OBSTACLES[randi(0, OBSTACLES.length)];
         const s = rand(0.6, 1.8);
-        const obsH = 64 * s;
+        const obsH = 96 * s;
         const obsW = obsH * obs.ratio;
 
         const cat = add([
           sprite(`${obs.name}_a`, { width: obsW, height: obsH }),
           pos(width() + obsW, groundY + playerH / 2),
           anchor("bot"),
-          area(),
+          area({ shape: new k.Rect(k.vec2(0), obsW * 0.8, obsH * 0.9) }),
           scale(1),
           "obstacle",
           "game",
@@ -232,8 +232,8 @@ export function startGameD(mount?: HTMLElement) {
           }),
         );
 
-        spawnEvery = rand(0.75, 1.25);
-        obstacleSpeed = Math.min(420, obstacleSpeed + 3);
+        spawnEvery = rand(1.5, 2.5);
+        obstacleSpeed = Math.min(620, obstacleSpeed + 4);
       }),
     );
 
