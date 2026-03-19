@@ -1,6 +1,12 @@
 import { showRetryOverlay } from "../../../shared/game-ui";
 import { onTapOrClick } from "../../../shared/input";
 import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
+import cat1Url from "./assets/cat1.svg";
+import cat2Url from "./assets/cat2.svg";
+import cat3Url from "./assets/cat3.svg";
+import playerUrl from "./assets/player.svg";
+
+const CAT_SPRITES = ["cat1", "cat2", "cat3"] as const;
 
 export function startGameD(mount?: HTMLElement) {
   setupMobileViewport();
@@ -21,14 +27,31 @@ export function startGameD(mount?: HTMLElement) {
     body,
     anchor,
     color,
+    sprite,
     text,
     width,
     height,
     dt,
     rand,
+    randi,
     destroyAll,
     setGravity,
   } = k;
+
+  // Load sprites
+  k.loadSprite("player", playerUrl);
+  k.loadSprite("cat1", cat1Url, {
+    sliceX: 2,
+    anims: { walk: { from: 0, to: 1, loop: true, speed: 4 } },
+  });
+  k.loadSprite("cat2", cat2Url, {
+    sliceX: 2,
+    anims: { walk: { from: 0, to: 1, loop: true, speed: 5 } },
+  });
+  k.loadSprite("cat3", cat3Url, {
+    sliceX: 2,
+    anims: { walk: { from: 0, to: 1, loop: true, speed: 6 } },
+  });
 
   let cleanup: Array<{ cancel: () => void }> = [];
 
@@ -52,12 +75,13 @@ export function startGameD(mount?: HTMLElement) {
     const groundY = height() - 90;
     const playerStartX = 88;
     const playerSize = 40;
+    const catSize = 48;
 
     let score = 0;
     let alive = true;
 
     add([
-      text("Tap / Space / ↑ でジャンプ\n障害物を避けてスコアを伸ばそう", { size: 16 }),
+      text("Tap / Space / ↑ でジャンプ\nネコを避けてスコアを伸ばそう", { size: 16 }),
       pos(16, 16),
       color(230, 230, 230),
       "game",
@@ -83,7 +107,7 @@ export function startGameD(mount?: HTMLElement) {
     ]);
 
     const player = add([
-      text("🐱", { size: 40 }),
+      sprite("player", { width: playerSize, height: playerSize }),
       pos(playerStartX, groundY),
       anchor("center"),
       area(),
@@ -115,18 +139,20 @@ export function startGameD(mount?: HTMLElement) {
         spawnEvery -= 0.12;
         if (spawnEvery > 0) return;
 
-        const h = rand(42, 96);
-        const w = rand(24, 38);
+        const catName = CAT_SPRITES[randi(0, CAT_SPRITES.length)];
+        const scale = rand(0.8, 1.3);
+        const w = catSize * scale;
+        const h = catSize * scale;
 
-        add([
-          rect(w, h),
+        const cat = add([
+          sprite(catName, { width: w, height: h }),
           pos(width() + w, groundY + playerSize / 2),
-          anchor("botleft"),
+          anchor("bot"),
           area(),
-          color(255, 170, 120),
           "obstacle",
           "game",
         ]);
+        cat.play("walk");
 
         spawnEvery = rand(0.75, 1.25);
         obstacleSpeed = Math.min(620, obstacleSpeed + 4);
