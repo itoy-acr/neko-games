@@ -37,8 +37,16 @@ export function startGameD(mount?: HTMLElement) {
     mount.innerHTML = `<div id="kaplay-root" style="width:100%; height:100%; display:grid; place-items:center;"></div>`;
   }
 
+  // Use device aspect ratio to fill screen width
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight;
+  const gameH = 780;
+  const gameW = Math.round(gameH * (screenW / screenH));
+
   const k = initKaplay({
     root: mount ? (mount.querySelector("#kaplay-root") as HTMLElement) : undefined,
+    width: gameW,
+    height: gameH,
   });
 
   const {
