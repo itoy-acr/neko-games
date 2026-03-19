@@ -2,6 +2,34 @@ import { showRetryOverlay } from "../../../shared/game-ui";
 import { onTapOrClick } from "../../../shared/input";
 import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
 
+import bgUrl from "./assets/bg.png";
+import hinokiAUrl from "./assets/hinoki_a.png";
+import hinokiBUrl from "./assets/hinoki_b.png";
+import huyunyanAUrl from "./assets/huyunyan_a.png";
+import huyunyanBUrl from "./assets/huyunyan_b.png";
+import ichigodaihukuAUrl from "./assets/ichigodaihuku_a.png";
+import ichigodaihukuBUrl from "./assets/ichigodaihuku_b.png";
+import katsuoAUrl from "./assets/katsuo_a.png";
+import katsuoBUrl from "./assets/katsuo_b.png";
+import sansyokudangoAUrl from "./assets/sansyokudango.png";
+import sansyokudangoBUrl from "./assets/sansyokudango_b.png";
+import tyamaAUrl from "./assets/tyama_a.png";
+import tyamaBUrl from "./assets/tyama_b.png";
+import watageAUrl from "./assets/watage_a.png";
+import watageBUrl from "./assets/watage_b.png";
+
+// Obstacle definitions: name, aspect ratio (w/h), two frame URLs
+const OBSTACLES = [
+  { name: "ichigodaihuku", ratio: 629 / 574, frames: [ichigodaihukuAUrl, ichigodaihukuBUrl] },
+  { name: "katsuo", ratio: 563 / 709, frames: [katsuoAUrl, katsuoBUrl] },
+  { name: "tyama", ratio: 528 / 696, frames: [tyamaAUrl, tyamaBUrl] },
+  { name: "hinoki", ratio: 457 / 698, frames: [hinokiAUrl, hinokiBUrl] },
+  { name: "huyunyan", ratio: 436 / 693, frames: [huyunyanAUrl, huyunyanBUrl] },
+  { name: "sansyokudango", ratio: 654 / 623, frames: [sansyokudangoAUrl, sansyokudangoBUrl] },
+] as const;
+
+const PLAYER_RATIO = 556 / 702; // watage w/h
+
 export function startGameD(mount?: HTMLElement) {
   setupMobileViewport();
 
@@ -21,14 +49,30 @@ export function startGameD(mount?: HTMLElement) {
     body,
     anchor,
     color,
+    sprite,
+    scale,
     text,
     width,
     height,
     dt,
     rand,
+    randi,
     destroyAll,
     setGravity,
   } = k;
+
+  // Load background
+  k.loadSprite("bg", bgUrl);
+
+  // Load player (watage) as 2-frame sprite sheet
+  k.loadSprite("player", watageAUrl);
+  k.loadSprite("player_b", watageBUrl);
+
+  // Load obstacle sprites (each has 2 individual frames, we alternate them)
+  for (const obs of OBSTACLES) {
+    k.loadSprite(`${obs.name}_a`, obs.frames[0]);
+    k.loadSprite(`${obs.name}_b`, obs.frames[1]);
+  }
 
   let cleanup: Array<{ cancel: () => void }> = [];
 
@@ -51,15 +95,35 @@ export function startGameD(mount?: HTMLElement) {
 
     const groundY = height() - 90;
     const playerStartX = 88;
-    const playerSize = 40;
+    const playerH = 64;
+    const playerW = playerH * PLAYER_RATIO;
 
     let score = 0;
     let alive = true;
 
+    // Background: height-fit, horizontal scroll, looping
+    const bgRatio = 3664 / 2061;
+    const bgH = height();
+    const bgW = bgH * bgRatio;
+    const bgScrollSpeed = 40;
+
+    const bg1 = add([sprite("bg", { width: bgW, height: bgH }), pos(0, 0), "game"]);
+    const bg2 = add([sprite("bg", { width: bgW, height: bgH }), pos(bgW, 0), "game"]);
+
+    track(
+      k.onUpdate(() => {
+        const move = bgScrollSpeed * dt();
+        bg1.pos.x -= move;
+        bg2.pos.x -= move;
+        if (bg1.pos.x <= -bgW) bg1.pos.x = bg2.pos.x + bgW;
+        if (bg2.pos.x <= -bgW) bg2.pos.x = bg1.pos.x + bgW;
+      }),
+    );
+
     add([
-      text("Tap / Space / ↑ でジャンプ\n障害物を避けてスコアを伸ばそう", { size: 16 }),
+      text("Tap / Space / ↑ でジャンプ\nネコを避けてスコアを伸ばそう", { size: 16 }),
       pos(16, 16),
-      color(230, 230, 230),
+      color(80, 80, 80),
       "game",
     ]);
 
@@ -67,15 +131,15 @@ export function startGameD(mount?: HTMLElement) {
       text("0", { size: 24 }),
       pos(width() - 16, 56),
       anchor("topright"),
-      color(255, 255, 255),
+      color(80, 80, 80),
       "game",
     ]);
 
     add([
       rect(width(), 6),
-      pos(0, groundY + playerSize / 2),
+      pos(0, groundY + playerH / 2),
       anchor("topleft"),
-      color(70, 88, 120),
+      color(180, 200, 220),
       area(),
       body({ isStatic: true }),
       "ground",
@@ -83,15 +147,34 @@ export function startGameD(mount?: HTMLElement) {
     ]);
 
     const player = add([
-      text("🐱", { size: 40 }),
+      sprite("player", { width: playerW, height: playerH }),
       pos(playerStartX, groundY),
       anchor("center"),
       area(),
       body(),
       "player",
       "game",
-      { jumpsLeft: 2 },
+      { jumpsLeft: 2, frameToggle: false },
     ]);
+
+    // Player walk animation: alternate between a/b frames
+    let playerAnimTimer = 0;
+    track(
+      k.onUpdate(() => {
+        if (!alive) return;
+        playerAnimTimer += dt();
+        if (playerAnimTimer >= 0.25) {
+          playerAnimTimer = 0;
+          player.frameToggle = !player.frameToggle;
+          player.use(
+            sprite(player.frameToggle ? "player_b" : "player", {
+              width: playerW,
+              height: playerH,
+            }),
+          );
+        }
+      }),
+    );
 
     let wasGrounded = false;
 
@@ -107,7 +190,7 @@ export function startGameD(mount?: HTMLElement) {
 
     const spawnBase = 1.1;
     let spawnEvery = spawnBase;
-    let obstacleSpeed = 320;
+    let obstacleSpeed = 180;
 
     track(
       k.loop(0.12, () => {
@@ -115,21 +198,42 @@ export function startGameD(mount?: HTMLElement) {
         spawnEvery -= 0.12;
         if (spawnEvery > 0) return;
 
-        const h = rand(42, 96);
-        const w = rand(24, 38);
+        const obs = OBSTACLES[randi(0, OBSTACLES.length)];
+        const s = rand(0.6, 1.8);
+        const obsH = 64 * s;
+        const obsW = obsH * obs.ratio;
 
-        add([
-          rect(w, h),
-          pos(width() + w, groundY + playerSize / 2),
-          anchor("botleft"),
+        const cat = add([
+          sprite(`${obs.name}_a`, { width: obsW, height: obsH }),
+          pos(width() + obsW, groundY + playerH / 2),
+          anchor("bot"),
           area(),
-          color(255, 170, 120),
+          scale(1),
           "obstacle",
           "game",
+          { animToggle: false, animTimer: 0, obsName: obs.name, obsW, obsH },
         ]);
 
+        // Per-obstacle walk animation
+        track(
+          k.onUpdate(() => {
+            if (!alive || !cat.exists()) return;
+            cat.animTimer += dt();
+            if (cat.animTimer >= 0.3) {
+              cat.animTimer = 0;
+              cat.animToggle = !cat.animToggle;
+              cat.use(
+                sprite(cat.animToggle ? `${cat.obsName}_b` : `${cat.obsName}_a`, {
+                  width: cat.obsW,
+                  height: cat.obsH,
+                }),
+              );
+            }
+          }),
+        );
+
         spawnEvery = rand(0.75, 1.25);
-        obstacleSpeed = Math.min(620, obstacleSpeed + 4);
+        obstacleSpeed = Math.min(420, obstacleSpeed + 3);
       }),
     );
 
