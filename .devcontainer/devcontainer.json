@@ -12,9 +12,10 @@
     "5173:5173"
   ],
 
-  // Codex 永続化（プロジェクト専用）
+  // AI エージェント永続化
   "mounts": [
-    "source=${localEnv:HOME}/.agent/codex/test-games/.codex,target=/home/node/.codex,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.agent/codex/test-games/.codex,target=/home/node/.codex,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
   ],
 
   // Features to add to the dev container. More info: https://containers.dev/features.
@@ -24,7 +25,7 @@
   "forwardPorts": [5173],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "npm install",
+  "postCreateCommand": "npm install && npm install -g @anthropic-ai/claude-code",
 
   // Configure tool-specific properties.
   "customizations": {

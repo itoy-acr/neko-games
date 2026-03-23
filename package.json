@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:game-d": "vite build --config vite.config.game-d.ts",
     "preview": "vite preview",
     "fmt": "biome format --write .",
     "lint": "biome lint .",
