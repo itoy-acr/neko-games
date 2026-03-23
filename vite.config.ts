@@ -23,6 +23,7 @@ export default defineConfig({
     port: 5173,
   },
   build: {
+    assetsInlineLimit: 2 * 1024 * 1024,
     rollupOptions: {
       input: {
         index: resolve(__dirname, "apps/index.html"),
