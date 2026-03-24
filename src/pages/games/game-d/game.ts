@@ -18,6 +18,9 @@ import watageAUrl from "./assets/watage_a.png";
 import watageBUrl from "./assets/watage_b.png";
 import { loadConfig } from "./config";
 import { createConfigUI } from "./config-ui";
+import { generateHitboxFromImage, scaleHitbox } from "./sprite-hitbox";
+
+type NormalizedPoint = { x: number; y: number };
 
 // Obstacle definitions: name, aspect ratio (w/h), two frame URLs
 const OBSTACLES = [
@@ -31,7 +34,23 @@ const OBSTACLES = [
 
 const PLAYER_RATIO = 556 / 702; // watage w/h
 
-export function startGameD(mount?: HTMLElement) {
+// Pre-computed hitbox polygons (normalized coordinates)
+let playerHitbox: NormalizedPoint[] | null = null;
+const obstacleHitboxes: Record<string, NormalizedPoint[]> = {};
+
+async function precomputeHitboxes() {
+  // Player hitbox from first frame
+  playerHitbox = await generateHitboxFromImage(watageAUrl);
+
+  // Obstacle hitboxes from first frame of each type
+  await Promise.all(
+    OBSTACLES.map(async (obs) => {
+      obstacleHitboxes[obs.name] = await generateHitboxFromImage(obs.frames[0]);
+    }),
+  );
+}
+
+export async function startGameD(mount?: HTMLElement) {
   setupMobileViewport();
 
   if (mount) {
@@ -83,6 +102,21 @@ export function startGameD(mount?: HTMLElement) {
     k.loadSprite(`${obs.name}_b`, obs.frames[1]);
   }
 
+  // Pre-compute hitbox polygons from sprite alpha channels
+  await precomputeHitboxes();
+
+  function makePolygon(
+    hitbox: NormalizedPoint[],
+    w: number,
+    h: number,
+    anchor: "center" | "bot" = "center",
+  ) {
+    const pts = scaleHitbox(hitbox, w, h, anchor);
+    return new k.Polygon(pts.map((p) => k.vec2(p.x, p.y)));
+  }
+
+  let gamePaused = false;
+
   let cleanup: Array<{ cancel: () => void }> = [];
 
   const track = <T extends { cancel: () => void }>(controller: T) => {
@@ -119,16 +153,26 @@ export function startGameD(mount?: HTMLElement) {
     const bgH = height();
     const bgW = bgH * bgRatio;
 
-    const bg1 = add([sprite("bg", { width: bgW, height: bgH }), pos(0, 0), "game"]);
-    const bg2 = add([sprite("bg", { width: bgW, height: bgH }), pos(bgW, 0), "game"]);
+    // Use enough background tiles to cover the screen width + one extra for scrolling
+    const bgCount = Math.ceil(width() / bgW) + 1;
+    const bgs = Array.from({ length: bgCount }, (_, i) =>
+      add([sprite("bg", { width: bgW, height: bgH }), pos(bgW * i, 0), "game"]),
+    );
 
     track(
       k.onUpdate(() => {
+        if (gamePaused) return;
         const move = cfg.bgScrollSpeed * dt();
-        bg1.pos.x -= move;
-        bg2.pos.x -= move;
-        if (bg1.pos.x <= -bgW) bg1.pos.x = bg2.pos.x + bgW;
-        if (bg2.pos.x <= -bgW) bg2.pos.x = bg1.pos.x + bgW;
+        for (const bg of bgs) {
+          bg.pos.x -= move;
+        }
+        // Recycle tiles that scrolled off-screen
+        for (const bg of bgs) {
+          if (bg.pos.x <= -bgW) {
+            const maxX = Math.max(...bgs.map((b) => b.pos.x));
+            bg.pos.x = maxX + bgW;
+          }
+        }
       }),
     );
 
@@ -172,11 +216,9 @@ export function startGameD(mount?: HTMLElement) {
       pos(cfg.playerStartX, groundY),
       anchor("center"),
       area({
-        shape: new k.Rect(
-          k.vec2(0),
-          playerW * cfg.playerCollisionW,
-          playerH * cfg.playerCollisionH,
-        ),
+        shape: playerHitbox
+          ? makePolygon(playerHitbox, playerW, playerH)
+          : new k.Rect(k.vec2(0), playerW * cfg.playerCollisionW, playerH * cfg.playerCollisionH),
       }),
       body(),
       k.opacity(1),
@@ -189,7 +231,7 @@ export function startGameD(mount?: HTMLElement) {
     let playerAnimTimer = 0;
     track(
       k.onUpdate(() => {
-        if (!alive) return;
+        if (gamePaused || !alive) return;
         playerAnimTimer += dt();
         if (playerAnimTimer >= cfg.playerAnimInterval) {
           playerAnimTimer = 0;
@@ -207,7 +249,7 @@ export function startGameD(mount?: HTMLElement) {
     // Invincibility blink effect
     track(
       k.onUpdate(() => {
-        if (invincibleTimer <= 0) return;
+        if (gamePaused || invincibleTimer <= 0) return;
         invincibleTimer -= dt();
         // Blink: toggle opacity rapidly
         player.opacity = Math.sin(invincibleTimer * 12) > 0 ? 1 : 0.3;
@@ -235,7 +277,7 @@ export function startGameD(mount?: HTMLElement) {
 
     track(
       k.loop(cfg.spawnCheckInterval, () => {
-        if (!alive) return;
+        if (gamePaused || !alive) return;
         spawnEvery -= cfg.spawnCheckInterval;
         if (spawnEvery > 0) return;
 
@@ -249,11 +291,9 @@ export function startGameD(mount?: HTMLElement) {
           pos(width() + obsW, groundY + playerH / 2),
           anchor("bot"),
           area({
-            shape: new k.Rect(
-              k.vec2(0),
-              obsW * cfg.obstacleCollisionW,
-              obsH * cfg.obstacleCollisionH,
-            ),
+            shape: obstacleHitboxes[obs.name]
+              ? makePolygon(obstacleHitboxes[obs.name], obsW, obsH, "bot")
+              : new k.Rect(k.vec2(0), obsW * cfg.obstacleCollisionW, obsH * cfg.obstacleCollisionH),
           }),
           scale(1),
           "obstacle",
@@ -264,7 +304,7 @@ export function startGameD(mount?: HTMLElement) {
         // Per-obstacle walk animation
         track(
           k.onUpdate(() => {
-            if (!alive || !cat.exists()) return;
+            if (gamePaused || !alive || !cat.exists()) return;
             cat.animTimer += dt();
             if (cat.animTimer >= cfg.obstacleAnimInterval) {
               cat.animTimer = 0;
@@ -286,7 +326,7 @@ export function startGameD(mount?: HTMLElement) {
 
     track(
       k.onUpdate(() => {
-        if (!alive) return;
+        if (gamePaused || !alive) return;
 
         const grounded = player.isGrounded();
         if (grounded && !wasGrounded) {
@@ -338,14 +378,17 @@ export function startGameD(mount?: HTMLElement) {
   const uiContainer = mount ? (mount.querySelector("#kaplay-root") as HTMLElement) : document.body;
 
   const pause = () => {
-    k.debug.paused = true;
+    gamePaused = true;
   };
   const resume = () => {
-    k.debug.paused = false;
+    gamePaused = false;
   };
 
   const configUI = createConfigUI(uiContainer, {
     onPause: pause,
+    onToggleHitbox: (show) => {
+      k.debug.inspect = show;
+    },
     onClose: () => {
       configUI.close();
       resume();

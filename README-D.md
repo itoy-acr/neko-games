@@ -34,8 +34,6 @@ localStorage.setItem("game-d-config", JSON.stringify({ maxLives: 5, jumpForce: 9
 |---|---|---|
 | `playerStartX` | 88 | プレイヤーの横位置 (px) |
 | `playerHeight` | 96 | プレイヤーのスプライト高さ (px) |
-| `playerCollisionW` | 0.6 | 当たり判定の幅（スプライト幅に対する比率） |
-| `playerCollisionH` | 0.8 | 当たり判定の高さ（スプライト高さに対する比率） |
 | `playerAnimInterval` | 0.25 | 歩きアニメのフレーム切替間隔 (秒) |
 
 ### ライフ
@@ -58,8 +56,6 @@ localStorage.setItem("game-d-config", JSON.stringify({ maxLives: 5, jumpForce: 9
 | `obstacleBaseHeight` | 96 | 障害物の基本高さ (px)。サイズ倍率で掛け算される |
 | `obstacleSizeMin` | 0.6 | 障害物サイズの最小倍率 |
 | `obstacleSizeMax` | 1.8 | 障害物サイズの最大倍率 |
-| `obstacleCollisionW` | 0.8 | 障害物の当たり判定の幅（スプライト幅に対する比率） |
-| `obstacleCollisionH` | 0.9 | 障害物の当たり判定の高さ（スプライト高さに対する比率） |
 | `obstacleAnimInterval` | 0.3 | 障害物の歩きアニメ切替間隔 (秒) |
 | `obstacleSpeedInitial` | 320 | 障害物の初期移動速度 (px/s) |
 | `obstacleSpeedMax` | 620 | 障害物の最大移動速度 (px/s) |
@@ -92,4 +88,4 @@ localStorage.setItem("game-d-config", JSON.stringify({ maxLives: 5, jumpForce: 9
 - **難易度を下げたい**: `maxLives` を増やす、`obstacleSpeedMax` を下げる、`obstacleSizeMax` を下げる
 - **難易度を上げたい**: `maxLives` を1にする、`spawnIntervalMax` を下げる、`obstacleSpeedAccel` を上げる
 - **ジャンプ感を変えたい**: `gravity` と `jumpForce` のバランスで調整。重力を下げるとふわっと、上げるとキビキビした動きになる
-- **当たり判定を甘くしたい**: `playerCollisionW/H` や `obstacleCollisionW/H` を小さくする
+- **当たり判定**: スプライトの透過部分から自動生成されるポリゴンを使用

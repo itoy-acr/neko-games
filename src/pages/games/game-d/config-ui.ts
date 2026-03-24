@@ -4,6 +4,7 @@ export type ConfigUICallbacks = {
   onPause: () => void;
   onClose: () => void;
   onRestart: () => void;
+  onToggleHitbox: (show: boolean) => void;
 };
 
 const FIELD_DEFS: { key: keyof GameDConfig; label: string; step?: number }[] = [
@@ -13,14 +14,10 @@ const FIELD_DEFS: { key: keyof GameDConfig; label: string; step?: number }[] = [
   { key: "maxLives", label: "ライフ数", step: 1 },
   { key: "invincibleDuration", label: "無敵時間(秒)", step: 0.1 },
   { key: "playerHeight", label: "プレイヤー高さ" },
-  { key: "playerCollisionW", label: "当たり判定 幅率", step: 0.05 },
-  { key: "playerCollisionH", label: "当たり判定 高さ率", step: 0.05 },
   { key: "bgScrollSpeed", label: "背景スクロール速度" },
   { key: "obstacleBaseHeight", label: "障害物 基本高さ" },
   { key: "obstacleSizeMin", label: "障害物 最小倍率", step: 0.1 },
   { key: "obstacleSizeMax", label: "障害物 最大倍率", step: 0.1 },
-  { key: "obstacleCollisionW", label: "障害物 当たり判定 幅率", step: 0.05 },
-  { key: "obstacleCollisionH", label: "障害物 当たり判定 高さ率", step: 0.05 },
   { key: "obstacleSpeedInitial", label: "障害物 初期速度" },
   { key: "obstacleSpeedMax", label: "障害物 最大速度" },
   { key: "obstacleSpeedAccel", label: "障害物 加速度", step: 1 },
@@ -55,6 +52,12 @@ export function createConfigUI(
     <div style="display:flex; gap:8px; margin-bottom:12px;">
       <button id="cfg-close" style="${btnStyle("#4a6a9a")}">▶ 続き</button>
       <button id="cfg-restart" style="${btnStyle("#6a4a4a")}">↺ リスタート</button>
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="cfg-hitbox" />
+        当たり判定を表示
+      </label>
     </div>
     <div id="config-fields" style="flex:1; overflow-y:auto;"></div>
     <div style="display:flex; gap:8px; margin-top:12px;">
@@ -138,6 +141,11 @@ export function createConfigUI(
   });
   gearBtn.addEventListener("touchstart", (e) => {
     e.stopPropagation();
+  });
+
+  const hitboxCheckbox = panel.querySelector("#cfg-hitbox") as HTMLInputElement;
+  hitboxCheckbox.addEventListener("change", () => {
+    callbacks.onToggleHitbox(hitboxCheckbox.checked);
   });
 
   panel.querySelector("#cfg-close")!.addEventListener("click", () => {
