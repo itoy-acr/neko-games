@@ -1,7 +1,6 @@
 import { showRetryOverlay } from "../../../shared/game-ui";
 import { onTapOrClick } from "../../../shared/input";
 import { initKaplay, setupMobileViewport } from "../../../shared/kaplay";
-
 import bgUrl from "./assets/bg.png";
 import hinokiAUrl from "./assets/hinoki_a.png";
 import hinokiBUrl from "./assets/hinoki_b.png";
@@ -17,6 +16,8 @@ import tyamaAUrl from "./assets/tyama_a.png";
 import tyamaBUrl from "./assets/tyama_b.png";
 import watageAUrl from "./assets/watage_a.png";
 import watageBUrl from "./assets/watage_b.png";
+import { loadConfig } from "./config";
+import { createConfigUI } from "./config-ui";
 
 // Obstacle definitions: name, aspect ratio (w/h), two frame URLs
 const OBSTACLES = [
@@ -97,30 +98,33 @@ export function startGameD(mount?: HTMLElement) {
   }
 
   function boot() {
+    // Reload config each game start so localStorage tweaks apply immediately
+    const cfg = loadConfig();
+
     resetHandlers();
     destroyAll("game");
-    setGravity(1800);
+    setGravity(cfg.gravity);
 
-    const groundY = height() * 0.72;
-    const playerStartX = 88;
-    const playerH = 96;
+    const groundY = height() * cfg.groundYRatio;
+    const playerH = cfg.playerHeight;
     const playerW = playerH * PLAYER_RATIO;
 
     let score = 0;
     let alive = true;
+    let lives = cfg.maxLives;
+    let invincibleTimer = 0;
 
     // Background: height-fit, horizontal scroll, looping
     const bgRatio = 3664 / 2061;
     const bgH = height();
     const bgW = bgH * bgRatio;
-    const bgScrollSpeed = 40;
 
     const bg1 = add([sprite("bg", { width: bgW, height: bgH }), pos(0, 0), "game"]);
     const bg2 = add([sprite("bg", { width: bgW, height: bgH }), pos(bgW, 0), "game"]);
 
     track(
       k.onUpdate(() => {
-        const move = bgScrollSpeed * dt();
+        const move = cfg.bgScrollSpeed * dt();
         bg1.pos.x -= move;
         bg2.pos.x -= move;
         if (bg1.pos.x <= -bgW) bg1.pos.x = bg2.pos.x + bgW;
@@ -143,6 +147,15 @@ export function startGameD(mount?: HTMLElement) {
       "game",
     ]);
 
+    // Lives display (hearts)
+    const livesLabel = add([
+      text(heartsText(lives), { size: 32 }),
+      pos(width() - 16, 16),
+      anchor("topright"),
+      color(220, 60, 80),
+      "game",
+    ]);
+
     add([
       rect(width(), 6),
       pos(0, groundY + playerH / 2),
@@ -156,13 +169,20 @@ export function startGameD(mount?: HTMLElement) {
 
     const player = add([
       sprite("player", { width: playerW, height: playerH }),
-      pos(playerStartX, groundY),
+      pos(cfg.playerStartX, groundY),
       anchor("center"),
-      area({ shape: new k.Rect(k.vec2(0), playerW * 0.6, playerH * 0.8) }),
+      area({
+        shape: new k.Rect(
+          k.vec2(0),
+          playerW * cfg.playerCollisionW,
+          playerH * cfg.playerCollisionH,
+        ),
+      }),
       body(),
+      k.opacity(1),
       "player",
       "game",
-      { jumpsLeft: 2, frameToggle: false },
+      { jumpsLeft: cfg.maxJumps, frameToggle: false },
     ]);
 
     // Player walk animation: alternate between a/b frames
@@ -171,7 +191,7 @@ export function startGameD(mount?: HTMLElement) {
       k.onUpdate(() => {
         if (!alive) return;
         playerAnimTimer += dt();
-        if (playerAnimTimer >= 0.25) {
+        if (playerAnimTimer >= cfg.playerAnimInterval) {
           playerAnimTimer = 0;
           player.frameToggle = !player.frameToggle;
           player.use(
@@ -184,11 +204,25 @@ export function startGameD(mount?: HTMLElement) {
       }),
     );
 
+    // Invincibility blink effect
+    track(
+      k.onUpdate(() => {
+        if (invincibleTimer <= 0) return;
+        invincibleTimer -= dt();
+        // Blink: toggle opacity rapidly
+        player.opacity = Math.sin(invincibleTimer * 12) > 0 ? 1 : 0.3;
+        if (invincibleTimer <= 0) {
+          invincibleTimer = 0;
+          player.opacity = 1;
+        }
+      }),
+    );
+
     let wasGrounded = false;
 
     function jump() {
       if (!alive || player.jumpsLeft <= 0) return;
-      player.jump(720);
+      player.jump(cfg.jumpForce);
       player.jumpsLeft -= 1;
     }
 
@@ -196,26 +230,31 @@ export function startGameD(mount?: HTMLElement) {
     track(k.onKeyPress("space", jump));
     track(k.onKeyPress("up", jump));
 
-    const spawnBase = 2.0;
-    let spawnEvery = spawnBase;
-    let obstacleSpeed = 320;
+    let spawnEvery = cfg.spawnInitialDelay;
+    let obstacleSpeed = cfg.obstacleSpeedInitial;
 
     track(
-      k.loop(0.12, () => {
+      k.loop(cfg.spawnCheckInterval, () => {
         if (!alive) return;
-        spawnEvery -= 0.12;
+        spawnEvery -= cfg.spawnCheckInterval;
         if (spawnEvery > 0) return;
 
         const obs = OBSTACLES[randi(0, OBSTACLES.length)];
-        const s = rand(0.6, 1.8);
-        const obsH = 96 * s;
+        const s = rand(cfg.obstacleSizeMin, cfg.obstacleSizeMax);
+        const obsH = cfg.obstacleBaseHeight * s;
         const obsW = obsH * obs.ratio;
 
         const cat = add([
           sprite(`${obs.name}_a`, { width: obsW, height: obsH }),
           pos(width() + obsW, groundY + playerH / 2),
           anchor("bot"),
-          area({ shape: new k.Rect(k.vec2(0), obsW * 0.8, obsH * 0.9) }),
+          area({
+            shape: new k.Rect(
+              k.vec2(0),
+              obsW * cfg.obstacleCollisionW,
+              obsH * cfg.obstacleCollisionH,
+            ),
+          }),
           scale(1),
           "obstacle",
           "game",
@@ -227,7 +266,7 @@ export function startGameD(mount?: HTMLElement) {
           k.onUpdate(() => {
             if (!alive || !cat.exists()) return;
             cat.animTimer += dt();
-            if (cat.animTimer >= 0.3) {
+            if (cat.animTimer >= cfg.obstacleAnimInterval) {
               cat.animTimer = 0;
               cat.animToggle = !cat.animToggle;
               cat.use(
@@ -240,8 +279,8 @@ export function startGameD(mount?: HTMLElement) {
           }),
         );
 
-        spawnEvery = rand(1.5, 2.5);
-        obstacleSpeed = Math.min(620, obstacleSpeed + 4);
+        spawnEvery = rand(cfg.spawnIntervalMin, cfg.spawnIntervalMax);
+        obstacleSpeed = Math.min(cfg.obstacleSpeedMax, obstacleSpeed + cfg.obstacleSpeedAccel);
       }),
     );
 
@@ -251,25 +290,37 @@ export function startGameD(mount?: HTMLElement) {
 
         const grounded = player.isGrounded();
         if (grounded && !wasGrounded) {
-          player.jumpsLeft = 2;
+          player.jumpsLeft = cfg.maxJumps;
         }
         wasGrounded = grounded;
 
-        score += Math.round(50 * dt());
+        score += Math.round(cfg.scorePerSecond * dt());
         scoreLabel.text = String(score);
 
         k.get("obstacle").forEach((o) => {
           o.move(-obstacleSpeed, 0);
-          if (o.pos.x < -80) o.destroy();
+          if (o.pos.x < cfg.obstacleDespawnX) o.destroy();
         });
       }),
     );
 
     track(
-      k.onCollide("player", "obstacle", () => {
-        if (!alive) return;
-        alive = false;
-        end();
+      k.onCollide("player", "obstacle", (_p, obs) => {
+        if (!alive || invincibleTimer > 0) return;
+
+        lives -= 1;
+        livesLabel.text = heartsText(lives);
+
+        // Destroy the obstacle that hit
+        obs.destroy();
+
+        if (lives <= 0) {
+          alive = false;
+          end();
+        } else {
+          // Start invincibility period
+          invincibleTimer = cfg.invincibleDuration;
+        }
       }),
     );
 
@@ -283,6 +334,33 @@ export function startGameD(mount?: HTMLElement) {
     }
   }
 
+  // Config UI overlay (HTML on top of canvas)
+  const uiContainer = mount ? (mount.querySelector("#kaplay-root") as HTMLElement) : document.body;
+
+  const pause = () => {
+    k.debug.paused = true;
+  };
+  const resume = () => {
+    k.debug.paused = false;
+  };
+
+  const configUI = createConfigUI(uiContainer, {
+    onPause: pause,
+    onClose: () => {
+      configUI.close();
+      resume();
+    },
+    onRestart: () => {
+      configUI.close();
+      resume();
+      boot();
+    },
+  });
+
   boot();
   return k;
+}
+
+function heartsText(lives: number): string {
+  return "♥".repeat(Math.max(0, lives));
 }
