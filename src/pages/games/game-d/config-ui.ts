@@ -148,22 +148,22 @@ export function createConfigUI(
     callbacks.onToggleHitbox(hitboxCheckbox.checked);
   });
 
-  panel.querySelector("#cfg-close")!.addEventListener("click", () => {
+  panel.querySelector("#cfg-close")?.addEventListener("click", () => {
     close();
     callbacks.onClose();
   });
 
-  panel.querySelector("#cfg-restart")!.addEventListener("click", () => {
+  panel.querySelector("#cfg-restart")?.addEventListener("click", () => {
     close();
     callbacks.onRestart();
   });
 
-  panel.querySelector("#cfg-save")!.addEventListener("click", () => {
+  panel.querySelector("#cfg-save")?.addEventListener("click", () => {
     saveConfig(getValues());
     showStatus("保存しました（次回リスタート時に反映）");
   });
 
-  panel.querySelector("#cfg-reset")!.addEventListener("click", () => {
+  panel.querySelector("#cfg-reset")?.addEventListener("click", () => {
     resetConfig();
     render();
     showStatus("デフォルトに戻しました");

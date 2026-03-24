@@ -19,7 +19,8 @@
     "rules": {
       "recommended": true,
       "style": {
-        "useImportType": "warn"
+        "useImportType": "warn",
+        "noNonNullAssertion": "error"
       },
       "suspicious": {
         "noExplicitAny": "warn"
